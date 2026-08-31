@@ -31,7 +31,8 @@ Con esto el repositorio queda totalmente configurado para alojar web
 
 El archivo `.yml` es simplemente un guion o lista de instrucciones paso a paso para los servidores de GitHub. Así es como se lee el código que he utilizado:
 
-- **¿Cuándo se ejecuta? (`on: push`)**: Le indico al flujo que esté "dormido" hasta que detecte un `push` a la rama `main`, pero con una restricción especial (`paths:`): **solo** debe despertarse si el archivo modificado ha sido mi `index.html`.
+- **¿Cuándo se ejecuta de forma automática? (`on: push`)**: Le indico al flujo que esté "dormido" hasta que detecte un `push` a la rama `master`, pero con una restricción especial (`paths:`): **solo** debe despertarse si el archivo modificado ha sido mi `index.html`.
+- **¿Cómo lo ejecuto manualmente? (`workflow_dispatch`)**: He añadido esta instrucción mágica porque Actions es muy estricto. Si subo una configuración pero no he modificado el `index.html`, el flujo automático no arranca. Gracias a `workflow_dispatch`, se habilita un botón en la web de GitHub (en la pestaña *Actions*) que me permite forzar el despliegue a mano con un solo clic en "Run workflow", ideal para poder probar que todo funciona sin tener que ensuciar mi historial con *commits falsos*.
 - **¿Qué permisos necesita? (`permissions`)**: Para evitar hackeos o problemas de seguridad, los flujos de Actions nacen sin poder tocar casi nada. Tengo que darle permiso explícito de escritura para que le dejen publicar cosas en el servicio de Pages (`pages: write`).
 - **El Trabajo a realizar (`jobs` -> `steps`)**:
   1. **Checkout**: El primer paso es decirle a la máquina virtual que descargue todo mi código fuente para poder leerlo.
