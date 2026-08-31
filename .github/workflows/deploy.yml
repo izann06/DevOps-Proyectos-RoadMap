@@ -1,0 +1,38 @@
+name: Deploy Web
+
+# 1. ¿CUÁNDO SE EJECUTA?
+# Solo cuando subes cambios al archivo index.html en la rama main
+on:
+  push:
+    branches: ["main"]
+    paths: ["Basico/gh-deployment-workflow/index.html"]
+
+# 2. PERMISOS OBLIGATORIOS
+# GitHub Actions necesita permisos especiales para publicar la página
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 3. TRABAJO A REALIZAR
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Necesario para que GitHub sepa que esto es un despliegue web
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+      
+    steps:
+      - name: ⬇️ Descargar código
+        uses: actions/checkout@v4
+      
+      - name: 📦 Empaquetar la carpeta de la web
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Le decimos que solo publique esta carpeta exacta
+          path: './Basico/gh-deployment-workflow'
+      
+      - name: 🚀 Publicar en GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
