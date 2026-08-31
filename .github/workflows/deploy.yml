@@ -6,6 +6,9 @@ on:
     push:
         branches: ["master"] # Se me olvido cambiar la rama a main y subir los arhcivos ahí asi que lo hago con master
         paths: ["Basico/gh-deployment-workflow/index.html"]
+    
+    # 🌟 NUEVO: Esto te permite darle al botón "Run workflow" manualmente en GitHub
+    workflow_dispatch:
 
 # 2. PERMISOS OBLIGATORIOS
 # GitHub Actions necesita permisos especiales para publicar la página
