@@ -17,6 +17,7 @@ Los proyectos están organizados en tres niveles de dificultad:
 | Proyecto | Descripción | Enlace al Reto | Solución |
 |----------|-------------|----------------|----------|
 | **Server Performance Stats** | Script para analizar estadísticas básicas de rendimiento en servidores Linux. | [Roadmap.sh - Server Stats](https://roadmap.sh/projects/server-stats) | [Ver Solución](./Basico/server-stats/) |
+| **GitHub Pages Deployment** | Workflow de CI/CD para automatizar el despliegue de una página web estática. | [Roadmap.sh - GitHub Actions](https://roadmap.sh/projects/github-actions-deployment-workflow) | [Ver Solución](./Basico/gh-deployment-workflow/) |
 
 ---
 *Más proyectos se irán añadiendo conforme vaya avanzando.*
