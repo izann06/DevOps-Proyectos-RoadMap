@@ -23,12 +23,12 @@ Para entender el proyecto, hay que tener claro que existen **dos mundos** que se
 
 ```mermaid
 graph TD
-    subgraph Mundo Local (Mi PC con Windows)
+    subgraph Local ["Mundo Local (Mi PC con Windows)"]
         A[Carpeta public/] -->|Contiene| B(index.html y style.css)
         C[Script deploy.sh] -->|Ejecuta automatización| D{Rsync o SCP}
     end
 
-    subgraph Mundo Remoto (Máquina Virtual Ubuntu)
+    subgraph Remoto ["Mundo Remoto (Máquina Virtual Ubuntu)"]
         E[Carpeta /var/www/mi-web]
         F[Servidor Nginx] -->|Lee archivos de| E
         G((Visitante web)) -->|Pide la web a Nginx| F
