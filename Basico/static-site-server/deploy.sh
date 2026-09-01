@@ -1,25 +1,31 @@
 #!/bin/bash
 
 # ==========================================
-# Script de Despliegue con Rsync
+# Script de Despliegue con Rsync / SCP
 # ==========================================
 
-# Variables de configuración
-# Usamos el alias SSH que configuramos en el reto anterior
 SERVER_ALIAS="mi-mv-ubuntu"
 REMOTE_DIR="/var/www/mi-web"
 LOCAL_DIR="./public/"
 
 echo "🚀 Iniciando el despliegue de la web estática..."
 
-# Ejecutar rsync
-# -a: modo archivo (preserva permisos, fechas, recursivo)
-# -v: verbose (muestra lo que está haciendo por pantalla)
-# -z: comprime los datos durante la transferencia para mayor velocidad
-# --delete: borra en el servidor los archivos que hayas borrado en tu PC (sincronización exacta)
-rsync -avz --delete "$LOCAL_DIR" "$SERVER_ALIAS:$REMOTE_DIR"
+# Comprobar si rsync está instalado (suele faltar en Windows/Git Bash)
+if command -v rsync >/dev/null 2>&1; then
+    echo "📦 Usando Rsync para sincronizar (Modo Avanzado DevOps)..."
+    rsync -avz --delete "$LOCAL_DIR" "$SERVER_ALIAS:$REMOTE_DIR"
+    DEPLOY_STATUS=$?
+else
+    echo "⚠️ ADVERTENCIA: No se ha detectado 'rsync' en tu sistema."
+    echo "💡 Esto es normal si estás usando Windows (Git Bash)."
+    echo "📦 Cayendo de pie: Usando 'scp' (Secure Copy) como alternativa..."
+    
+    # scp copia todo de forma bruta, no sincroniza inteligentemente como rsync, pero sirve para aprender.
+    scp -r "$LOCAL_DIR"* "$SERVER_ALIAS:$REMOTE_DIR"
+    DEPLOY_STATUS=$?
+fi
 
-if [ $? -eq 0 ]; then
+if [ $DEPLOY_STATUS -eq 0 ]; then
     echo "✅ ¡Despliegue completado con éxito!"
     echo "🌍 Tu web ya debería estar disponible en la IP de tu servidor."
 else

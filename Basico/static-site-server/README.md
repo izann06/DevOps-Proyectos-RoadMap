@@ -1,104 +1,136 @@
-# 🌍 Static Site Server: Nginx & Rsync
+# 🌍 Static Site Server: Nginx, Rsync & SCP
 
 ![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
 ![Rsync](https://img.shields.io/badge/Rsync-333333?style=for-the-badge)
 ![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
 
-¡Bienvenido a mi proyecto **Static Site Server**! Este es el cuarto proyecto de nivel **básico**, donde he puesto en práctica mis conocimientos montando un servidor web real desde cero.
+¡Bienvenido a mi proyecto **Static Site Server**! Este es el cuarto proyecto de nivel **básico**. Aquí he dado un gran salto: he convertido un servidor vacío en un servidor web real capaz de alojar páginas en internet.
 
-## 🎯 Objetivo del Proyecto
+## 🎯 ¿Qué he aprendido en este proyecto?
 
-El objetivo de este reto ha sido comprender cómo funciona la web "por debajo". En lugar de usar servicios modernos donde haces un clic y todo se publica automáticamente, aquí he construido yo mismo la infraestructura:
-1. Instalando y configurando **Nginx** como servidor web en mi máquina virtual.
-2. Utilizando la herramienta **`rsync`** para crear un script de despliegue automatizado. Este script transporta los archivos de mi PC al servidor de manera hiper-eficiente utilizando el canal seguro SSH que configuré en el reto anterior.
+En lugar de usar plataformas automáticas como Vercel o Netlify donde subes tu código y mágicamente funciona, aquí he montado la infraestructura "a mano". He aprendido dos conceptos vitales en DevOps:
 
-## 🏗️ Arquitectura del Despliegue
+| Concepto | Herramienta Usada | Explicación |
+| :--- | :--- | :--- |
+| **Servidor Web** | `Nginx` | Es el programa que "escucha" cuando alguien pone mi IP en el navegador y le sirve los archivos HTML y CSS. Funciona como el recepcionista de un hotel. |
+| **Sincronización** | `Rsync` / `SCP` | Son herramientas para enviar mis archivos desde mi PC al servidor de forma segura (por SSH). `rsync` es súper inteligente y solo envía lo que ha cambiado, mientras que `scp` copia todo de forma bruta. |
 
-Así es como funciona mi flujo de trabajo cuando quiero publicar un cambio en la web:
+---
+
+## 🏗️ Arquitectura: ¿Cómo funciona mi web?
+
+Para entender el proyecto, hay que tener claro que existen **dos mundos** que se comunican entre sí: el PC local y el servidor remoto.
 
 ```mermaid
-sequenceDiagram
-    participant MiPC as 💻 Mi PC Local
-    participant SSH as 🔐 Canal Seguro (SSH)
-    participant Nginx as 🌐 Servidor Nginx (VM)
-    
-    MiPC->>MiPC: Edito index.html y ejecuto deploy.sh
-    MiPC->>SSH: rsync envía SOLO los archivos modificados
-    SSH->>Nginx: Archivos guardados en /var/www/mi-web/
-    Note over Nginx: Nginx sirve los nuevos archivos al mundo exterior
+graph TD
+    subgraph Mundo Local (Mi PC con Windows)
+        A[Carpeta public/] -->|Contiene| B(index.html y style.css)
+        C[Script deploy.sh] -->|Ejecuta automatización| D{Rsync o SCP}
+    end
+
+    subgraph Mundo Remoto (Máquina Virtual Ubuntu)
+        E[Carpeta /var/www/mi-web]
+        F[Servidor Nginx] -->|Lee archivos de| E
+        G((Visitante web)) -->|Pide la web a Nginx| F
+    end
+
+    D == "Sube los archivos (vía SSH)" ==> E
 ```
 
 ---
 
-## 🚀 Guía Paso a Paso: Cómo lo he montado
+## 🚀 Guía Paso a Paso
 
-A continuación, documento los pasos exactos que seguí para completar este reto. Si quieres replicarlo en tu entorno, sigue este orden.
+Dividiremos la explicación en dos grandes bloques: lo que ocurre en el servidor y lo que ocurre en mi ordenador.
 
-### Parte 1: Configurar el Servidor (Máquina Virtual)
+### PARTE 1: Preparando el Servidor (Ubuntu)
 
-1. **Entrar al servidor de forma segura:**
-   Utilizando el alias que creé en el reto anterior, entré por SSH a mi máquina Ubuntu sin necesidad de poner contraseñas:
-   ```bash
-   ssh mi-mv-ubuntu
-   ```
+Estos pasos se ejecutan **dentro de la máquina virtual**, a la que accedo usando SSH (`ssh mi-mv-ubuntu`).
 
-2. **Instalar el servidor web Nginx:**
+1. **Instalar el servidor web Nginx:**
    ```bash
    sudo apt update
    sudo apt install nginx -y
    ```
-
-3. **Crear la carpeta para alojar mi web:**
-   Por convención, las webs se guardan en el directorio `/var/www/`. Creé una carpeta específica para este proyecto:
+2. **Crear la "habitación" para mi web:**
+   Linux guarda las webs en `/var/www/`. Creé una carpeta exclusiva para mi proyecto:
    ```bash
    sudo mkdir -p /var/www/mi-web
    ```
-
-4. **Arreglar los permisos (¡Paso Crítico!):**
-   Por defecto, esa carpeta le pertenece al administrador `root`. Como voy a usar `rsync` para enviar archivos con mi usuario normal, tuve que darle la propiedad de la carpeta a mi usuario para no tener errores de "Permiso denegado":
+3. **Dar permisos a mi usuario (Vital):**
+   > [!WARNING]  
+   > Por defecto, la carpeta creada pertenece a `root` (el administrador del sistema). Si intento enviar archivos desde mi PC con mi usuario normal, Linux me bloqueará. Necesito hacerme dueño de esa carpeta para no tener errores de *Permiso Denegado*:
    ```bash
    sudo chown -R $USER:$USER /var/www/mi-web
    ```
-
-5. **Configurar Nginx para que apunte a mi carpeta:**
-   Edité el archivo de configuración por defecto de Nginx:
+4. **Enchufar Nginx a mi carpeta:**
+   Edito la configuración base de Nginx:
    ```bash
    sudo nano /etc/nginx/sites-available/default
    ```
-   Dentro del archivo, busqué la línea que decía `root /var/www/html;` y la cambié por mi nueva ruta: `root /var/www/mi-web;`.
+   Cambio la ruta de la web por defecto para que mire a mi nueva carpeta:
+   - De: `root /var/www/html;`
+   - A: `root /var/www/mi-web;`
    
-   Finalmente, reinicié Nginx para aplicar los cambios:
+   Y reinicio Nginx para que lea los cambios: 
    ```bash
    sudo systemctl restart nginx
    ```
 
-### Parte 2: El Script de Despliegue en mi PC (Local)
+---
 
-En la carpeta de este proyecto (`Basico/static-site-server/`) he creado dos cosas:
-1. Una subcarpeta llamada `public/` que contiene el diseño de mi web (`index.html` y `style.css`).
-2. El script mágico `deploy.sh`.
+### PARTE 2: El Despliegue Automático (Mi PC)
 
-#### ¿Qué hace el script de despliegue?
-En lugar de subir los archivos a mano cada vez que cambio una coma en el código, el script usa el comando `rsync`:
+Aquí es donde entra la automatización DevOps. He creado un script llamado `deploy.sh` en mi ordenador para no tener que subir los archivos manualmente uno a uno.
+
+> [!NOTE]  
+> **El problema de Windows vs Linux**
+> En un entorno profesional (Linux/Mac), usaríamos el comando `rsync` para subir la web porque es hiper-rápido (solo sube los archivos que han cambiado). Sin embargo, **Windows no incluye `rsync` de serie**. 
+> 
+> Por tanto, he programado mi script para que sea inteligente: si estoy en Linux usa `rsync`, y si detecta que estoy en Windows, usa el "Plan B" y despliega la web con `scp` (Secure Copy), que hace un trabajo parecido y **sí** viene en Windows.
+
+#### Así funciona el código de mi script:
+
 ```bash
-rsync -avz --delete ./public/ mi-mv-ubuntu:/var/www/mi-web
+# 1. Comprueba si rsync existe (Linux/Mac)
+if command -v rsync >/dev/null 2>&1; then
+    # MODO LINUX: Sincronización inteligente
+    # -a (archivos), -v (verboso), -z (comprimido), --delete (borra lo antiguo)
+    rsync -avz --delete ./public/ mi-mv-ubuntu:/var/www/mi-web
+
+else
+    # MODO WINDOWS: Copia de seguridad
+    # scp (Secure Copy) envía todos los archivos de golpe por SSH
+    scp -r ./public/* mi-mv-ubuntu:/var/www/mi-web
+fi
 ```
-- `-a`: Modo archivo (preserva fechas y permisos intactos).
-- `-v`: Verbose (me va chivando por pantalla qué archivos se están copiando exactamente).
-- `-z`: Comprime los datos temporalmente para que viajen rapidísimo.
-- `--delete`: Si borro una imagen antigua en mi PC, `rsync` la borrará también del servidor para que ambos sitios sean un espejo perfecto.
 
-## 🛠️ Cómo ejecutar y probar este proyecto
+### 🛠️ ¿Cómo probarlo la primera vez?
 
-1. Antes de nada, dale permisos de ejecución al script en tu PC:
+1. Abre una terminal en tu PC (si estás en Windows, abre Git Bash o PowerShell).
+2. Dale permisos de ejecución al script:
    ```bash
    chmod +x deploy.sh
    ```
-2. Lanza el despliegue. Verás cómo los archivos suben volando al servidor:
+3. Ejecútalo. Verás cómo automáticamente detecta tu sistema operativo y envía los archivos:
    ```bash
    ./deploy.sh
    ```
-3. Abre tu navegador web favorito y entra en la IP de tu servidor (ej: `http://192.168.1.134`). ¡Verás la página que acabas de publicar!
+4. Abre tu navegador de internet (Chrome, Firefox...) y pon la IP de tu servidor (por ejemplo: `http://192.168.1.134`). ¡Verás la página que acabas de publicar!
+
+### 🔄 El Día a Día (Si vuelves otro día)
+
+Una vez que has hecho la configuración inicial, Nginx se queda encendido **para siempre** en tu servidor (incluso si lo reinicias). Por tanto, tu flujo de trabajo a partir de ahora es súper cómodo:
+
+1. **Asegúrate de que la Máquina Virtual está encendida** (porque ahí vive tu servidor Nginx). No hace falta que entres dentro por SSH, basta con que VirtualBox esté corriendo.
+2. Abre cualquier editor en tu PC (VSCode, por ejemplo) y **modifica tu web** (cambia un texto en `index.html` y guarda el archivo).
+3. Abre una terminal en tu Windows en la ruta donde está el script `deploy.sh` y ejecútalo de nuevo:
+   ```bash
+   ./deploy.sh
+   ```
+4. Ve a tu navegador web, entra en la IP de tu máquina (por ejemplo `http://192.168.1.134`), y **pulsa F5 para actualizar**. ¡Verás tus cambios subidos al instante!
+
+---
 
 ## 🔗 Enlaces
 - [Reto original propuesto por roadmap.sh](https://roadmap.sh/projects/static-site-server)
