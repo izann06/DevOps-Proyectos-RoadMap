@@ -105,6 +105,14 @@ ssh -i $HOME/.ssh/id_rsa_1 user@192.168.1.134
 # Entrando con la Clave 2
 ssh -i $HOME/.ssh/id_rsa_2 user@192.168.1.134
 ```
+
+> [!TIP]
+> **El comando estándar por excelencia**
+> Aunque arriba he sido específico indicando qué clave usar con `-i`, es importante saber que el comando universal de toda la vida para conectarse a cualquier servidor Linux (ya sea con contraseña o con claves por defecto) es mucho más simple:
+> ```bash
+> ssh user@192.168.1.134
+> ```
+
 ¡Boom! Acceso directo al servidor sin necesidad de teclear ninguna contraseña. 🎉
 
 ---
